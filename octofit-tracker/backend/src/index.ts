@@ -1,5 +1,5 @@
 import express, { ErrorRequestHandler } from 'express';
-import { connectDB } from './db.js';
+import { connectDB } from './config/database.js';
 import {
   usersRouter,
   teamsRouter,

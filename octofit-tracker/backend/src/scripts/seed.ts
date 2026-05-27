@@ -1,4 +1,4 @@
-import { connectDB } from '../db.js';
+import { connectDB } from '../config/database.js';
 import { User, Team, Activity, Workout, Leaderboard } from '../models/index.js';
 
 // Seed the octofit_db database with test data
