@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { apiGet, apiPost } from '../utils/api'
+
+const workoutsEndpoint = import.meta.env.VITE_CODESPACE_NAME?.trim()
+  ? `https://${import.meta.env.VITE_CODESPACE_NAME}-8000.app.github.dev/api/workouts`
+  : 'http://localhost:8000/api/workouts'
 
 export default function Workouts() {
   const [workouts, setWorkouts] = useState([])
@@ -18,7 +21,12 @@ export default function Workouts() {
   const fetchWorkouts = async () => {
     try {
       setLoading(true)
-      const data = await apiGet('workouts')
+      const response = await fetch(workoutsEndpoint)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
+      const data = await response.json()
       setWorkouts(Array.isArray(data) ? data : data.data || [])
       setError(null)
     } catch (err) {
@@ -42,10 +50,20 @@ export default function Workouts() {
     e.preventDefault()
     try {
       setSubmitting(true)
-      await apiPost('workouts', {
-        ...formData,
-        duration: parseInt(formData.duration),
+      const response = await fetch(workoutsEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          duration: parseInt(formData.duration),
+        }),
       })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
       setFormData({
         name: '',
         description: '',

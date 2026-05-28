@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { apiGet, apiPost } from '../utils/api'
+
+const teamsEndpoint = import.meta.env.VITE_CODESPACE_NAME?.trim()
+  ? `https://${import.meta.env.VITE_CODESPACE_NAME}-8000.app.github.dev/api/teams`
+  : 'http://localhost:8000/api/teams'
 
 export default function Teams() {
   const [teams, setTeams] = useState([])
@@ -16,7 +19,12 @@ export default function Teams() {
   const fetchTeams = async () => {
     try {
       setLoading(true)
-      const data = await apiGet('teams')
+      const response = await fetch(teamsEndpoint)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
+      const data = await response.json()
       setTeams(Array.isArray(data) ? data : data.data || [])
       setError(null)
     } catch (err) {
@@ -40,7 +48,17 @@ export default function Teams() {
     e.preventDefault()
     try {
       setSubmitting(true)
-      await apiPost('teams', formData)
+      const response = await fetch(teamsEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
       setFormData({
         name: '',
         description: '',

@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { apiGet } from '../utils/api'
+
+const leaderboardEndpoint = import.meta.env.VITE_CODESPACE_NAME?.trim()
+  ? `https://${import.meta.env.VITE_CODESPACE_NAME}-8000.app.github.dev/api/leaderboard`
+  : 'http://localhost:8000/api/leaderboard'
 
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState([])
@@ -9,7 +12,12 @@ export default function Leaderboard() {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true)
-      const data = await apiGet('leaderboard')
+      const response = await fetch(leaderboardEndpoint)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
+      const data = await response.json()
       setLeaderboard(Array.isArray(data) ? data : data.data || [])
       setError(null)
     } catch (err) {

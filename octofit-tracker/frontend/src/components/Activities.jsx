@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { apiGet, apiPost } from '../utils/api'
+
+const activitiesEndpoint = import.meta.env.VITE_CODESPACE_NAME?.trim()
+  ? `https://${import.meta.env.VITE_CODESPACE_NAME}-8000.app.github.dev/api/activities`
+  : 'http://localhost:8000/api/activities'
 
 export default function Activities() {
   const [activities, setActivities] = useState([])
@@ -18,7 +21,12 @@ export default function Activities() {
   const fetchActivities = async () => {
     try {
       setLoading(true)
-      const data = await apiGet('activities')
+      const response = await fetch(activitiesEndpoint)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
+      const data = await response.json()
       setActivities(Array.isArray(data) ? data : data.data || [])
       setError(null)
     } catch (err) {
@@ -42,13 +50,23 @@ export default function Activities() {
     e.preventDefault()
     try {
       setSubmitting(true)
-      await apiPost('activities', {
-        userId: formData.userId,
-        activityType: formData.activityType,
-        duration: parseInt(formData.duration),
-        caloriesBurned: parseInt(formData.caloriesBurned),
-        date: formData.date,
+      const response = await fetch(activitiesEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: formData.userId,
+          activityType: formData.activityType,
+          duration: parseInt(formData.duration),
+          caloriesBurned: parseInt(formData.caloriesBurned),
+          date: formData.date,
+        }),
       })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
       setFormData({
         userId: '',
         activityType: '',

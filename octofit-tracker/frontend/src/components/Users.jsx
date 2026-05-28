@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { apiGet, apiPost } from '../utils/api'
+
+const usersEndpoint = import.meta.env.VITE_CODESPACE_NAME?.trim()
+  ? `https://${import.meta.env.VITE_CODESPACE_NAME}-8000.app.github.dev/api/users`
+  : 'http://localhost:8000/api/users'
 
 export default function Users() {
   const [users, setUsers] = useState([])
@@ -18,7 +21,12 @@ export default function Users() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const data = await apiGet('users')
+      const response = await fetch(usersEndpoint)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
+      const data = await response.json()
       setUsers(Array.isArray(data) ? data : data.data || [])
       setError(null)
     } catch (err) {
@@ -42,10 +50,20 @@ export default function Users() {
     e.preventDefault()
     try {
       setSubmitting(true)
-      await apiPost('users', {
-        ...formData,
-        age: formData.age ? parseInt(formData.age) : undefined,
+      const response = await fetch(usersEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          age: formData.age ? parseInt(formData.age) : undefined,
+        }),
       })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `API responded with ${response.status}`)
+      }
       setFormData({
         name: '',
         email: '',
